@@ -543,7 +543,8 @@ def fsdp_main(local_rank:int, world_size:int, args:Dict):
                 args["model_name"],
                 use_cache=False,
                 torch_dtype=torch_dtype,
-                _attn_implementation=attn_impl
+                _attn_implementation=attn_impl,
+                trust_remote_code=True
             )
             dtype = torch_dtype if args["precision"] == "bf16" else None
             model.to(dtype=dtype, device="cpu" if args["low_memory"] else rank)
@@ -574,6 +575,7 @@ def fsdp_main(local_rank:int, world_size:int, args:Dict):
 
         # load model on meta device without calling init and replace nn.Linear with Linear4bit
         with init_empty_weights():
+            cfg.trust_remote_code = True
             model = AutoModelForCausalLM.from_config(cfg)
             if args["train_type"] in ["hqq_lora", "hqq_dora", "hqq_llama_pro"]:
                 # TODO: Tune BaseQuantizeConfig.
